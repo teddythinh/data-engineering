@@ -39,9 +39,29 @@ def format_data(res):
 
 def stream_data():
     import json
-    res = get_data()
-    res = format_data(res)
-    print(json.dumps(res, indent=3))
+    from kafka import KafkaProducer
+    import time
+    import logging
+
+    producer = KafkaProducer(bootstrap_servers=['broker:29092'], max_block_ms=5000)
+
+    curr_time = time.time()
+    while True:
+        if time.time() > curr_time + 60:  # 1 minute
+            break
+        try:
+            res = get_data()
+            res = format_data(res)
+
+            producer.send('users_created', json.dumps(res).encode('utf-8'))
+        except Exception as e:
+            logging.error(f'An error occurred: {e}')
+            continue
+
+    # producer = KafkaProducer(bootstrap_servers=['broker:29092'], max_block_ms=5000)
+    # res = get_data()
+    # res = format_data(res)
+    # producer.send('users_created', json.dumps(res).encode('utf-8'))
 
 
 with DAG('user_automation',
